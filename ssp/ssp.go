@@ -1,20 +1,20 @@
 package ssp
 
 import (
+	"bytes"
 	"encoding/json"
+	"io/ioutil"
+	"log"
 	"net/http"
 
 	// Import DSP packages here.
 	"github.com/Samuel3Shin/Tiny-SSP-with-Open-RTB-spec/common"
-	"github.com/Samuel3Shin/Tiny-SSP-with-Open-RTB-spec/dsp1"
-	"github.com/Samuel3Shin/Tiny-SSP-with-Open-RTB-spec/dsp2"
 )
 
 func getBidFromDSPs(bidRequest common.BidRequest) (highestBid common.Bid) {
-	// Call the bid function of dsp1 and dsp2
-	// For example purposes, we assume that dsp1 and dsp2 have a function called "getBid"
-	dsp1Bid := dsp1.GetBid(bidRequest)
-	dsp2Bid := dsp2.GetBid(bidRequest)
+	// Call the GetBidHandler function of dsp1 and dsp2 via HTTP
+	dsp1Bid := getBidFromDSP(bidRequest, "http://localhost:8081/get-bid")
+	dsp2Bid := getBidFromDSP(bidRequest, "http://localhost:8082/get-bid")
 
 	// Compare the bids and return the highest
 	if dsp1Bid.Bid > dsp2Bid.Bid {
@@ -22,6 +22,43 @@ func getBidFromDSPs(bidRequest common.BidRequest) (highestBid common.Bid) {
 	} else {
 		return dsp2Bid
 	}
+}
+
+func getBidFromDSP(bidRequest common.BidRequest, url string) (bid common.Bid) {
+	// Convert bidRequest to json
+	jsonData, err := json.Marshal(bidRequest)
+	if err != nil {
+		log.Println(err)
+	}
+
+	// Create a new request using http
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	// We add headers to the request
+	req.Header.Add("Content-Type", "application/json")
+
+	// Send the request and get the response
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	// We read the response body
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	// We close the response body
+	resp.Body.Close()
+
+	// Unmarshal the body into a bid
+	json.Unmarshal(body, &bid)
+
+	return bid
 }
 
 func BidRequestHandler(w http.ResponseWriter, r *http.Request) {
