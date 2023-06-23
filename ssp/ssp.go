@@ -3,9 +3,11 @@ package ssp
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 
 	// Import DSP packages here.
 	"github.com/Samuel3Shin/Tiny-SSP-with-Open-RTB-spec/common"
@@ -73,11 +75,25 @@ func BidRequestHandler(w http.ResponseWriter, r *http.Request) {
 	// Get the highest bid
 	highestBid := getBidFromDSPs(bidRequest)
 
+	// Fire the impression pixel
+	fireImpressionPixel(highestBid)
+
 	// Create and send the BidResponse
 	json.NewEncoder(w).Encode(common.BidResponse{
 		ID:  bidRequest.ID,
 		Bid: highestBid,
 	})
+}
+
+func fireImpressionPixel(bid common.Bid) {
+	// Create the string to log
+	logString := fmt.Sprintf("ID: %s, Bid: %f, AdHTML: %s", bid.ID, bid.Bid, bid.AdHTML)
+
+	// Make a POST request to the log server
+	_, err := http.Post("http://localhost:8083", "text/plain", strings.NewReader(logString))
+	if err != nil {
+		log.Printf("Failed to fire impression pixel: %v", err)
+	}
 }
 
 func StartServer() {
