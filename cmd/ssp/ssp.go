@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	// Import DSP packages here.
-	"github.com/Samuel3Shin/Tiny-SSP-with-Open-RTB-spec/common"
+	"github.com/Samuel3Shin/Tiny-SSP-with-Open-RTB-spec/pkg/common"
 )
 
 func getBidFromDSPs(bidRequest common.BidRequest) (highestBid common.Bid) {

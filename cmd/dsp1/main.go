@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Samuel3Shin/Tiny-SSP-with-Open-RTB-spec/common"
+	"github.com/Samuel3Shin/Tiny-SSP-with-Open-RTB-spec/pkg/common"
 )
 
 func GetBidHandler(w http.ResponseWriter, r *http.Request) {
@@ -24,7 +24,7 @@ func GetBidHandler(w http.ResponseWriter, r *http.Request) {
 	bid := common.Bid{
 		ID:     bidRequest.ID,
 		Bid:    bidAmount,
-		AdHTML: "<h1>This is an ad2</h1>",
+		AdHTML: "<h1>This is an ad1</h1>",
 	}
 
 	// Send the bid
@@ -33,5 +33,5 @@ func GetBidHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	http.HandleFunc("/get-bid", GetBidHandler)
-	http.ListenAndServe(":8082", nil)
+	http.ListenAndServe(":8081", nil)
 }
