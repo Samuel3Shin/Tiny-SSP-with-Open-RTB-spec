@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
@@ -14,53 +13,48 @@ import (
 )
 
 func getBidFromDSPs(bidRequest common.BidRequest) (highestBid common.Bid) {
-	// Call the GetBidHandler function of dsp1 and dsp2 via HTTP
-	dsp1Bid := getBidFromDSP(bidRequest, "http://localhost:8081/get-bid")
-	dsp2Bid := getBidFromDSP(bidRequest, "http://localhost:8082/get-bid")
+	// Create a channel to receive bids
+	bids := make(chan common.Bid, 2)
+
+	// Call the bid function of dsp1 and dsp2 concurrently
+	// Higher QPS
+	go func() {
+		bids <- getBidFromDSP(bidRequest, "http://localhost:8081/get-bid")
+	}()
+	go func() {
+		bids <- getBidFromDSP(bidRequest, "http://localhost:8082/get-bid")
+	}()
+
+	// Receive the bids
+	bid1 := <-bids
+	bid2 := <-bids
 
 	// Compare the bids and return the highest
-	if dsp1Bid.Bid > dsp2Bid.Bid {
-		return dsp1Bid
+	if bid1.Bid > bid2.Bid {
+		return bid1
 	} else {
-		return dsp2Bid
+		return bid2
 	}
 }
-
 func getBidFromDSP(bidRequest common.BidRequest, url string) (bid common.Bid) {
-	// Convert bidRequest to json
-	jsonData, err := json.Marshal(bidRequest)
+	// Convert bidRequest to JSON
+	jsonReq, err := json.Marshal(bidRequest)
 	if err != nil {
-		log.Println(err)
+		log.Printf("Failed to marshal bid request: %v", err)
+		return
 	}
 
-	// Create a new request using http
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	// Send the request
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonReq))
 	if err != nil {
-		log.Fatalln(err)
+		log.Printf("Failed to get bid: %v", err)
+		return
 	}
+	defer resp.Body.Close()
 
-	// We add headers to the request
-	req.Header.Add("Content-Type", "application/json")
-
-	// Send the request and get the response
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	// We read the response body
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	// We close the response body
-	resp.Body.Close()
-
-	// Unmarshal the body into a bid
-	json.Unmarshal(body, &bid)
-
-	return bid
+	// Read and return the bid
+	json.NewDecoder(resp.Body).Decode(&bid)
+	return
 }
 
 func BidRequestHandler(w http.ResponseWriter, r *http.Request) {

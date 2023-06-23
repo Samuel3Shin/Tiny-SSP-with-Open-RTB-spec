@@ -27,6 +27,7 @@ func LogHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "OK")
 }
 
+//TODO: need to store in a more proper format not .txt
 func logToFile(logText string) {
 	// Open the log file in append mode
 	f, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
