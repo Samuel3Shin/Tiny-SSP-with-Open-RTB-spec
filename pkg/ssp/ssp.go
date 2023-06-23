@@ -1,7 +1,6 @@
 package ssp
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -11,16 +10,16 @@ import (
 	"github.com/Samuel3Shin/Tiny-SSP-with-Open-RTB-spec/pkg/common"
 )
 
-// Note: The functions remain the same as your previous implementation.
-
 type BidGetter interface {
 	GetBidFromDSP(bidRequest common.BidRequest, url string) common.Bid
 }
 
-type SSP struct{}
+type SSP struct {
+	BidGetter
+}
 
 func NewSSP(bg BidGetter) *SSP {
-	return &SSP{}
+	return &SSP{BidGetter: bg}
 }
 
 func (s *SSP) GetBidFromDSPs(bidRequest common.BidRequest) (highestBid common.Bid) {
@@ -40,24 +39,6 @@ func (s *SSP) GetBidFromDSPs(bidRequest common.BidRequest) (highestBid common.Bi
 	} else {
 		return bid2
 	}
-}
-
-func (s *SSP) GetBidFromDSP(bidRequest common.BidRequest, url string) (bid common.Bid) {
-	jsonReq, err := json.Marshal(bidRequest)
-	if err != nil {
-		log.Printf("Failed to marshal bid request: %v", err)
-		return
-	}
-
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonReq))
-	if err != nil {
-		log.Printf("Failed to get bid: %v", err)
-		return
-	}
-	defer resp.Body.Close()
-
-	json.NewDecoder(resp.Body).Decode(&bid)
-	return
 }
 
 func (s *SSP) BidRequestHandler(w http.ResponseWriter, r *http.Request) {

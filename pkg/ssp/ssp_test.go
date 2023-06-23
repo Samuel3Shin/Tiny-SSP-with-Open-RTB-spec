@@ -10,7 +10,7 @@ import (
 type mockBidGetter struct{}
 
 func (mbg *mockBidGetter) GetBidFromDSP(bidRequest common.BidRequest, url string) common.Bid {
-	// Return whatever you want here for testing
+	// This mock will return the same bid for every URL
 	return common.Bid{
 		ID:     "1234",
 		Bid:    50.0,
