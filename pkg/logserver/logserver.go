@@ -28,7 +28,7 @@ func init() {
 	if err != nil {
 		log.Fatalf("Failed to connect to MongoDB: %v", err)
 	}
-	logCollection = client.Database("logDB").Collection("logs")
+	logCollection = client.Database("dockerLogDB").Collection("logs")
 }
 
 func LogHandler(w http.ResponseWriter, r *http.Request) {
@@ -41,7 +41,6 @@ func LogHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Log the data
 	logToDB(string(body))
-	// fmt.Print("Received log: ", string(body))
 	// Respond with a 200 OK
 	fmt.Fprint(w, "OK")
 }
