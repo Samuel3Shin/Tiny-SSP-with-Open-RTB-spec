@@ -8,10 +8,19 @@ import (
 )
 
 func TestGenerateBid(t *testing.T) {
-	bidRequest := common.BidRequest{ID: "abcd", Imp: "ad", Site: "test.com"}
-	bid := dsp1.GenerateBid(bidRequest)
+	bidRequest := common.BidRequest{
+		ID: "abcd",
+		Imp: []common.Impression{
+			{
+				ID:     "imp1",
+				Banner: common.Banner{W: 300, H: 250},
+			},
+		},
+	}
+	bidResponse := dsp1.GenerateBid(bidRequest)
+	bid := bidResponse.SeatBid[0].Bid[0]
 
-	if bid.ID != "abcd" || bid.Bid < 0 || bid.Bid > 100 || bid.AdHTML != "<h1>This is an ad1</h1>" {
+	if bidResponse.ID != "abcd" || bid.Price < 0 || bid.Price > 100 || bid.ID != "1234" || bid.AdID != "ad1" {
 		t.Errorf("Unexpected bid: %v", bid)
 	}
 }
