@@ -11,7 +11,7 @@ import (
 )
 
 type BidGetter interface {
-	GetBidFromDSP(bidRequest common.BidRequest, url string) common.Bid
+	GetBidFromDSP(bidRequest common.BidRequest, url string) common.BidResponse
 }
 
 type SSP struct {
@@ -22,47 +22,48 @@ func NewSSP(bg BidGetter) *SSP {
 	return &SSP{BidGetter: bg}
 }
 
-func (s *SSP) GetBidFromDSPs(bidRequest common.BidRequest) (highestBid common.Bid) {
-	bids := make(chan common.Bid, 2)
+func (s *SSP) GetBidFromDSPs(bidRequest common.BidRequest) (maxBid common.BidResponse) {
+	bidResponses := make(chan common.BidResponse, 2)
+
 	go func() {
-		bids <- s.GetBidFromDSP(bidRequest, "http://localhost:8081/get-bid")
-	}()
-	go func() {
-		bids <- s.GetBidFromDSP(bidRequest, "http://localhost:8082/get-bid")
+		bidResponses <- s.GetBidFromDSP(bidRequest, "http://localhost:8081/get-bid")
 	}()
 
-	bid1 := <-bids
-	bid2 := <-bids
+	go func() {
+		bidResponses <- s.GetBidFromDSP(bidRequest, "http://localhost:8082/get-bid")
+	}()
 
-	if bid1.Bid > bid2.Bid {
-		return bid1
-	} else {
-		return bid2
+	response1 := <-bidResponses
+	response2 := <-bidResponses
+
+	if response1.SeatBid[0].Bid[0].Price > response2.SeatBid[0].Bid[0].Price {
+		return response1
 	}
+
+	return response2
 }
 
 func (s *SSP) BidRequestHandler(w http.ResponseWriter, r *http.Request) {
 	var bidRequest common.BidRequest
-	err := json.NewDecoder(r.Body).Decode(&bidRequest)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&bidRequest); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	highestBid := s.GetBidFromDSPs(bidRequest)
+	maxBid := s.GetBidFromDSPs(bidRequest)
+	bid := maxBid.SeatBid[0].Bid[0]
 
-	s.fireImpressionPixel(highestBid)
+	s.fireImpressionPixel(bid)
 
-	json.NewEncoder(w).Encode(common.BidResponse{
-		ID:  bidRequest.ID,
-		Bid: highestBid,
-	})
+	if err := json.NewEncoder(w).Encode(maxBid); err != nil {
+		log.Printf("Failed to write response: %v", err)
+	}
 }
 
 func (s *SSP) fireImpressionPixel(bid common.Bid) {
-	logString := fmt.Sprintf("ID: %s, Bid: %f, AdHTML: %s", bid.ID, bid.Bid, bid.AdHTML)
+	logMessage := fmt.Sprintf("ID: %s, Bid: %f, AdID: %s", bid.ID, bid.Price, bid.AdID)
 
-	_, err := http.Post("http://localhost:8083", "text/plain", strings.NewReader(logString))
+	_, err := http.Post("http://localhost:8083", "text/plain", strings.NewReader(logMessage))
 	if err != nil {
 		log.Printf("Failed to fire impression pixel: %v", err)
 	}
@@ -70,5 +71,7 @@ func (s *SSP) fireImpressionPixel(bid common.Bid) {
 
 func (s *SSP) StartServer() {
 	http.HandleFunc("/bid", s.BidRequestHandler)
-	http.ListenAndServe(":8080", nil)
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		log.Fatal(err)
+	}
 }
