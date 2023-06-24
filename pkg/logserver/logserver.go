@@ -1,16 +1,33 @@
 package logserver
 
 import (
+	"context"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"time"
+
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-const logFilePath = "./log.txt"
+type LogEntry struct {
+	Time    time.Time `bson:"time"`
+	LogText string    `bson:"logText"`
+}
+
+var logCollection *mongo.Collection
+
+func init() {
+	// Initialize MongoDB client and collection
+	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
+	client, err := mongo.Connect(context.Background(), clientOptions)
+	if err != nil {
+		log.Fatalf("Failed to connect to MongoDB: %v", err)
+	}
+	logCollection = client.Database("logDB").Collection("logs")
+}
 
 func LogHandler(w http.ResponseWriter, r *http.Request) {
 	// Read the body of the request
@@ -21,26 +38,23 @@ func LogHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Log the data
-	logToFile(string(body))
-
+	logToDB(string(body))
+	fmt.Print("Received log: ", string(body))
 	// Respond with a 200 OK
 	fmt.Fprint(w, "OK")
 }
 
-//TODO: need to store in a more proper format not .txt
-func logToFile(logText string) {
-	// Open the log file in append mode
-	f, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Printf("Error opening file: %v", err)
-		return
+func logToDB(logText string) {
+	// Create a log entry
+	entry := LogEntry{
+		Time:    time.Now(),
+		LogText: logText,
 	}
-	defer f.Close()
 
-	// Write to the log file
-	_, err = io.WriteString(f, time.Now().Format(time.RFC3339)+": "+logText+"\n")
+	// Insert the log entry into the database
+	_, err := logCollection.InsertOne(context.Background(), entry)
 	if err != nil {
-		log.Printf("Error writing to file: %v", err)
+		log.Printf("Failed to insert log entry: %v", err)
 	}
 }
 

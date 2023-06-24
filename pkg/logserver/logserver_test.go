@@ -1,25 +1,53 @@
 package logserver
 
 import (
-	"bufio"
-	"os"
-	"strings"
+	"context"
 	"testing"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func TestLogToFile(t *testing.T) {
-	logToFile("test log")
+func TestLogToDB(t *testing.T) {
+	// Setup MongoDB client
+	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
+	client, err := mongo.Connect(context.Background(), clientOptions)
+	if err != nil {
+		t.Fatalf("Failed to connect to MongoDB: %v", err)
+	}
+	defer func() {
+		if err = client.Disconnect(context.Background()); err != nil {
+			panic(err)
+		}
+	}()
 
-	file, _ := os.Open(logFilePath)
-	defer file.Close()
+	// Get the logs collection
+	collection := client.Database("logDB").Collection("logs")
 
-	scanner := bufio.NewScanner(file)
-	var lastLine string
-	for scanner.Scan() {
-		lastLine = scanner.Text()
+	// Create a test log entry
+	testLog := "test log"
+	entry := LogEntry{
+		Time:    time.Now(),
+		LogText: testLog,
 	}
 
-	if !strings.Contains(lastLine, "test log") {
-		t.Errorf("Log file does not contain the expected log")
+	// Insert the log entry into the database
+	_, err = collection.InsertOne(context.Background(), entry)
+	if err != nil {
+		t.Fatalf("Failed to insert log entry: %v", err)
+	}
+
+	// Query the log entry back from the database
+	var result LogEntry
+	err = collection.FindOne(context.Background(), bson.M{"logText": testLog}).Decode(&result)
+	if err != nil {
+		t.Fatalf("Failed to find log entry: %v", err)
+	}
+
+	// Check if the log entry content is correct
+	if result.LogText != testLog {
+		t.Errorf("Log content incorrect, got: %s, want: %s.", result.LogText, testLog)
 	}
 }
