@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Samuel3Shin/Tiny-SSP-with-Open-RTB-spec/pkg/common"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -12,7 +13,8 @@ import (
 
 func TestLogToDB(t *testing.T) {
 	// Setup MongoDB client
-	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
+	cfg := common.GetConfig()
+	clientOptions := options.Client().ApplyURI(cfg.MONGODB_URL)
 	client, err := mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
 		t.Fatalf("Failed to connect to MongoDB: %v", err)

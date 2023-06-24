@@ -10,6 +10,7 @@ import (
 type mockBidGetter struct{}
 
 func (mbg *mockBidGetter) GetBidFromDSP(bidRequest common.BidRequest, url string) common.BidResponse {
+	cfg := common.GetConfig()
 	return common.BidResponse{
 		ID: "abcd",
 		SeatBid: []common.SeatBid{
@@ -20,7 +21,7 @@ func (mbg *mockBidGetter) GetBidFromDSP(bidRequest common.BidRequest, url string
 						ImpID: "imp1",
 						Price: 50.0,
 						AdID:  "ad1",
-						NURL:  "http://localhost:8083",
+						NURL:  cfg.LOGSERVER_URL,
 					},
 				},
 			},

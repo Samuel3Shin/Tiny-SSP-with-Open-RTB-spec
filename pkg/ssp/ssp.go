@@ -23,14 +23,15 @@ func NewSSP(bg BidGetter) *SSP {
 }
 
 func (s *SSP) GetBidFromDSPs(bidRequest common.BidRequest) (maxBid common.BidResponse) {
+	cfg := common.GetConfig()
 	bidResponses := make(chan common.BidResponse, 2)
 
 	go func() {
-		bidResponses <- s.GetBidFromDSP(bidRequest, "http://localhost:8081/get-bid")
+		bidResponses <- s.GetBidFromDSP(bidRequest, fmt.Sprintf("%s/get-bid", cfg.DSP1_URL))
 	}()
 
 	go func() {
-		bidResponses <- s.GetBidFromDSP(bidRequest, "http://localhost:8082/get-bid")
+		bidResponses <- s.GetBidFromDSP(bidRequest, fmt.Sprintf("%s/get-bid", cfg.DSP2_URL))
 	}()
 
 	response1 := <-bidResponses
@@ -61,9 +62,9 @@ func (s *SSP) BidRequestHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *SSP) fireImpressionPixel(bid common.Bid) {
+	cfg := common.GetConfig()
 	logMessage := fmt.Sprintf("ID: %s, Bid: %f, AdID: %s", bid.ID, bid.Price, bid.AdID)
-
-	_, err := http.Post("http://localhost:8083", "text/plain", strings.NewReader(logMessage))
+	_, err := http.Post(cfg.LOGSERVER_URL, "text/plain", strings.NewReader(logMessage))
 	if err != nil {
 		log.Printf("Failed to fire impression pixel: %v", err)
 	}

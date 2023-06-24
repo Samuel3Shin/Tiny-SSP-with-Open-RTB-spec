@@ -26,6 +26,7 @@ func GetBidHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GenerateBid(bidRequest common.BidRequest) common.BidResponse {
+	cfg := common.GetConfig()
 	rand.Seed(time.Now().UnixNano())
 	bidAmount := rand.Float64() * 100
 	return common.BidResponse{
@@ -38,7 +39,7 @@ func GenerateBid(bidRequest common.BidRequest) common.BidResponse {
 						ImpID: bidRequest.Imp[0].ID,
 						Price: bidAmount,
 						AdID:  "ad1",
-						NURL:  "http://localhost:8083",
+						NURL:  cfg.LOGSERVER_URL,
 					},
 				},
 			},

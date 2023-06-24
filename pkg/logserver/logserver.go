@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Samuel3Shin/Tiny-SSP-with-Open-RTB-spec/pkg/common"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -21,7 +22,8 @@ var logCollection *mongo.Collection
 
 func init() {
 	// Initialize MongoDB client and collection
-	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
+	cfg := common.GetConfig()
+	clientOptions := options.Client().ApplyURI(cfg.MONGODB_URL)
 	client, err := mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
 		log.Fatalf("Failed to connect to MongoDB: %v", err)
@@ -39,7 +41,7 @@ func LogHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Log the data
 	logToDB(string(body))
-	fmt.Print("Received log: ", string(body))
+	// fmt.Print("Received log: ", string(body))
 	// Respond with a 200 OK
 	fmt.Fprint(w, "OK")
 }
