@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/Samuel3Shin/Tiny-SSP-with-Open-RTB-spec/pkg/common"
+	"github.com/rs/cors"
 )
 
 type BidGetter interface {
@@ -71,8 +72,9 @@ func (s *SSP) fireImpressionPixel(bid common.Bid) {
 }
 
 func (s *SSP) StartServer() {
+	handler := cors.Default().Handler(http.DefaultServeMux)
 	http.HandleFunc("/bid", s.BidRequestHandler)
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	if err := http.ListenAndServe(":8080", handler); err != nil {
 		log.Fatal(err)
 	}
 }
