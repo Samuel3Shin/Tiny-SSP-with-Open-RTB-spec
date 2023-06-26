@@ -1,6 +1,7 @@
 package dsp2_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/Samuel3Shin/Tiny-SSP-with-Open-RTB-spec/pkg/common"
@@ -18,9 +19,16 @@ func TestGenerateBid(t *testing.T) {
 		},
 	}
 	bidResponse := dsp2.GenerateBid(bidRequest)
-	bid := bidResponse.SeatBid[0].Bid[0]
 
-	if bidResponse.ID != "abcd" || bid.Price < 0 || bid.Price > 100 || bid.ID != "1234" || bid.AdID != "ad1" {
-		t.Errorf("Unexpected bid: %v", bid)
+	if bidResponse.ID != "abcd" {
+		t.Errorf("Unexpected response ID: %v", bidResponse.ID)
+	}
+
+	for i, seatBid := range bidResponse.SeatBid {
+		for j, bid := range seatBid.Bid {
+			if bid.Price < 0 || bid.Price > 100 || bid.ID != fmt.Sprintf("bid%d", j+4) || bid.AdID != fmt.Sprintf("ad%d", j+4) {
+				t.Errorf("Unexpected bid in SeatBid %d: %v", i, bid)
+			}
+		}
 	}
 }
