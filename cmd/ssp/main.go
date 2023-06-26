@@ -12,26 +12,27 @@ import (
 
 type bidGetter struct{}
 
-func (bg *bidGetter) GetBidFromDSP(bidRequest common.BidRequest, url string) common.BidResponse {
+func (bg *bidGetter) GetBidFromDSP(bidRequest common.BidRequest, url string) (common.BidResponse, error) {
 	requestJSON, err := json.Marshal(bidRequest)
 	if err != nil {
 		log.Printf("Failed to marshal bid request: %v", err)
-		return common.BidResponse{}
+		return common.BidResponse{}, err
 	}
 
 	response, err := http.Post(url, "application/json", bytes.NewBuffer(requestJSON))
 	if err != nil {
 		log.Printf("Failed to get bid: %v", err)
-		return common.BidResponse{}
+		return common.BidResponse{}, err
 	}
 	defer response.Body.Close()
 
 	var bidResponse common.BidResponse
 	if err := json.NewDecoder(response.Body).Decode(&bidResponse); err != nil {
 		log.Printf("Failed to decode bid response: %v", err)
+		return common.BidResponse{}, err
 	}
 
-	return bidResponse
+	return bidResponse, nil
 }
 
 func main() {

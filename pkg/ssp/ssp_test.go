@@ -9,7 +9,7 @@ import (
 
 type mockBidGetter struct{}
 
-func (mbg *mockBidGetter) GetBidFromDSP(bidRequest common.BidRequest, url string) common.BidResponse {
+func (mbg *mockBidGetter) GetBidFromDSP(bidRequest common.BidRequest, url string) (common.BidResponse, error) {
 	cfg := common.GetConfig()
 	return common.BidResponse{
 		ID: "abcd",
@@ -26,7 +26,7 @@ func (mbg *mockBidGetter) GetBidFromDSP(bidRequest common.BidRequest, url string
 				},
 			},
 		},
-	}
+	}, nil
 }
 
 func TestGetBidFromDSPs(t *testing.T) {
@@ -41,7 +41,11 @@ func TestGetBidFromDSPs(t *testing.T) {
 		},
 	}
 
-	maxBidResponse := sspInstance.GetBidFromDSPs(bidRequest)
+	maxBidResponse, err := sspInstance.GetBidFromDSPs(bidRequest)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
 	maxBid := maxBidResponse.SeatBid[0].Bid[0]
 
 	if maxBid.ID != "1234" || maxBid.Price != 50.0 || maxBid.AdID != "ad1" {

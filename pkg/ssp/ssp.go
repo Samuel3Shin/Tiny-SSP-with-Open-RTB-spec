@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"reflect"
 	"strings"
 
 	"github.com/Samuel3Shin/Tiny-SSP-with-Open-RTB-spec/pkg/common"
@@ -12,7 +13,7 @@ import (
 )
 
 type BidGetter interface {
-	GetBidFromDSP(bidRequest common.BidRequest, url string) common.BidResponse
+	GetBidFromDSP(bidRequest common.BidRequest, url string) (common.BidResponse, error)
 }
 
 type SSP struct {
@@ -23,36 +24,54 @@ func NewSSP(bg BidGetter) *SSP {
 	return &SSP{BidGetter: bg}
 }
 
-func (s *SSP) GetBidFromDSPs(bidRequest common.BidRequest) (maxBid common.BidResponse) {
+func (s *SSP) GetBidFromDSPs(bidRequest common.BidRequest) (maxBid common.BidResponse, err error) {
 	cfg := common.GetConfig()
 	bidResponses := make(chan common.BidResponse, 2)
+	errResponses := make(chan error, 2)
 
 	go func() {
-		bidResponses <- s.GetBidFromDSP(bidRequest, fmt.Sprintf("%s/get-bid", cfg.DSP1_URL))
+		bidResponse, err := s.GetBidFromDSP(bidRequest, fmt.Sprintf("%s/get-bid", cfg.DSP1_URL))
+		bidResponses <- bidResponse
+		errResponses <- err
 	}()
 
 	go func() {
-		bidResponses <- s.GetBidFromDSP(bidRequest, fmt.Sprintf("%s/get-bid", cfg.DSP2_URL))
+		bidResponse, err := s.GetBidFromDSP(bidRequest, fmt.Sprintf("%s/get-bid", cfg.DSP2_URL))
+		bidResponses <- bidResponse
+		errResponses <- err
 	}()
 
 	response1 := <-bidResponses
+	err1 := <-errResponses
 	response2 := <-bidResponses
+	err2 := <-errResponses
+
+	totalResponses := []common.BidResponse{}
+
+	// Add to total list only if there's no error and response is of valid type
+	if err1 == nil && reflect.TypeOf(response1) == reflect.TypeOf(common.BidResponse{}) {
+		totalResponses = append(totalResponses, response1)
+	}
+
+	if err2 == nil && reflect.TypeOf(response2) == reflect.TypeOf(common.BidResponse{}) {
+		totalResponses = append(totalResponses, response2)
+	}
 
 	var maxPrice float64
 	var maxResponse common.BidResponse
 
-	for _, responses := range []common.BidResponse{response1, response2} {
-		for _, seatBid := range responses.SeatBid {
+	for _, response := range totalResponses {
+		for _, seatBid := range response.SeatBid {
 			for _, bid := range seatBid.Bid {
 				if bid.Price > maxPrice {
 					maxPrice = bid.Price
-					maxResponse = responses
+					maxResponse = response
 				}
 			}
 		}
 	}
 
-	return maxResponse
+	return maxResponse, nil
 }
 
 func (s *SSP) BidRequestHandler(w http.ResponseWriter, r *http.Request) {
@@ -62,7 +81,7 @@ func (s *SSP) BidRequestHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	maxResponse := s.GetBidFromDSPs(bidRequest)
+	maxResponse, _ := s.GetBidFromDSPs(bidRequest)
 	var maxBid common.Bid
 	var maxPrice float64
 	for _, seatBid := range maxResponse.SeatBid {
