@@ -38,11 +38,21 @@ func (s *SSP) GetBidFromDSPs(bidRequest common.BidRequest) (maxBid common.BidRes
 	response1 := <-bidResponses
 	response2 := <-bidResponses
 
-	if response1.SeatBid[0].Bid[0].Price > response2.SeatBid[0].Bid[0].Price {
-		return response1
+	var maxPrice float64
+	var maxResponse common.BidResponse
+
+	for _, responses := range []common.BidResponse{response1, response2} {
+		for _, seatBid := range responses.SeatBid {
+			for _, bid := range seatBid.Bid {
+				if bid.Price > maxPrice {
+					maxPrice = bid.Price
+					maxResponse = responses
+				}
+			}
+		}
 	}
 
-	return response2
+	return maxResponse
 }
 
 func (s *SSP) BidRequestHandler(w http.ResponseWriter, r *http.Request) {
@@ -52,12 +62,28 @@ func (s *SSP) BidRequestHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	maxBid := s.GetBidFromDSPs(bidRequest)
-	bid := maxBid.SeatBid[0].Bid[0]
+	maxResponse := s.GetBidFromDSPs(bidRequest)
+	var maxBid common.Bid
+	var maxPrice float64
+	for _, seatBid := range maxResponse.SeatBid {
+		for _, bid := range seatBid.Bid {
+			if bid.Price > maxPrice {
+				maxPrice = bid.Price
+				maxBid = bid
+			}
+		}
+	}
 
-	s.fireImpressionPixel(bid)
+	s.fireImpressionPixel(maxBid)
 
-	if err := json.NewEncoder(w).Encode(maxBid); err != nil {
+	// make sure to return only the max bid to the frontend
+	maxResponse.SeatBid = []common.SeatBid{
+		{
+			Bid: []common.Bid{maxBid},
+		},
+	}
+
+	if err := json.NewEncoder(w).Encode(maxResponse); err != nil {
 		log.Printf("Failed to write response: %v", err)
 	}
 }
