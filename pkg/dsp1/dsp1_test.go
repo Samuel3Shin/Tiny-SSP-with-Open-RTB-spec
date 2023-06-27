@@ -2,6 +2,7 @@ package dsp1_test
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/Samuel3Shin/Tiny-SSP-with-Open-RTB-spec/pkg/common"
@@ -28,6 +29,13 @@ func TestGenerateBid(t *testing.T) {
 		for j, bid := range seatBid.Bid {
 			if bid.Price < 0 || bid.Price > 100 || bid.ID != fmt.Sprintf("bid%d", j+1) || bid.AdID != fmt.Sprintf("ad%d", j+1) {
 				t.Errorf("Unexpected bid in SeatBid %d: %v", i, bid)
+			}
+
+			// Now also check that the AdM field is not empty and contains essential HTML parts
+			if bid.AdM == "" {
+				t.Errorf("AdM field should not be empty")
+			} else if !strings.Contains(bid.AdM, "<a href=") {
+				t.Errorf("AdM field should contain valid ad markup")
 			}
 		}
 	}

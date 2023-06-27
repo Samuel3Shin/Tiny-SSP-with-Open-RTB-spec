@@ -29,5 +29,6 @@ type Bid struct {
 	ImpID string  `json:"impid"`
 	Price float64 `json:"price"`
 	AdID  string  `json:"adid"`
+	AdM   string  `json:"adm"`
 	NURL  string  `json:"nurl"`
 }
