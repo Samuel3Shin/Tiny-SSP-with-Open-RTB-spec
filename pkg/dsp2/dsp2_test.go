@@ -27,7 +27,7 @@ func TestGenerateBid(t *testing.T) {
 
 	for i, seatBid := range bidResponse.SeatBid {
 		for j, bid := range seatBid.Bid {
-			if bid.Price < 0 || bid.Price > 100 || bid.ID != fmt.Sprintf("bid%d", j+1) || bid.AdID != fmt.Sprintf("ad%d", j+1) {
+			if bid.Price < 0 || bid.Price > 100 || bid.ID != fmt.Sprintf("bid%d", j+4) || bid.AdID != fmt.Sprintf("ad%d", j+4) {
 				t.Errorf("Unexpected bid in SeatBid %d: %v", i, bid)
 			}
 
