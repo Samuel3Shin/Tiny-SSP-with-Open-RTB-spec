@@ -10,29 +10,18 @@ services:
     environment:
       - DSP1_URL=http://dsp1:8081
       - DSP2_URL=http://dsp2:8082
-      - LOGSERVER_URL=http://logserver:8083
-    depends_on:
-      - logserver
   dsp1:
     build: 
       context: ./
       dockerfile: cmd/dsp1/Dockerfile
     ports:
       - 8081:8081
-    environment:
-      - LOGSERVER_URL=http://logserver:8083
-    depends_on:
-      - logserver
   dsp2:
     build: 
       context: ./
       dockerfile: cmd/dsp2/Dockerfile
     ports:
       - 8082:8082
-    environment:
-      - LOGSERVER_URL=http://logserver:8083
-    depends_on:
-      - logserver
   logserver:
     build: 
       context: ./
