@@ -29,10 +29,10 @@ func TestLogToDB(t *testing.T) {
 	collection := client.Database("logDB").Collection("logs")
 
 	// Create a test log entry
-	testLog := "test log"
+	testAdID := "ad1"
 	entry := LogEntry{
-		Time:    time.Now(),
-		LogText: testLog,
+		Time: time.Now(),
+		AdID: testAdID,
 	}
 
 	// Insert the log entry into the database
@@ -43,13 +43,13 @@ func TestLogToDB(t *testing.T) {
 
 	// Query the log entry back from the database
 	var result LogEntry
-	err = collection.FindOne(context.Background(), bson.M{"logText": testLog}).Decode(&result)
+	err = collection.FindOne(context.Background(), bson.M{"adID": testAdID}).Decode(&result)
 	if err != nil {
 		t.Fatalf("Failed to find log entry: %v", err)
 	}
 
-	// Check if the log entry content is correct
-	if result.LogText != testLog {
-		t.Errorf("Log content incorrect, got: %s, want: %s.", result.LogText, testLog)
+	// Check if the ad ID is correct
+	if result.AdID != testAdID {
+		t.Errorf("Ad ID incorrect, got: %s, want: %s.", result.AdID, testAdID)
 	}
 }
