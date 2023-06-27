@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"reflect"
-	"strings"
 
 	"github.com/Samuel3Shin/Tiny-SSP-with-Open-RTB-spec/pkg/common"
 	"github.com/rs/cors"
@@ -93,8 +92,6 @@ func (s *SSP) BidRequestHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	s.fireImpressionPixel(maxBid)
-
 	// make sure to return only the max bid to the frontend
 	maxResponse.SeatBid = []common.SeatBid{
 		{
@@ -104,15 +101,6 @@ func (s *SSP) BidRequestHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewEncoder(w).Encode(maxResponse); err != nil {
 		log.Printf("Failed to write response: %v", err)
-	}
-}
-
-func (s *SSP) fireImpressionPixel(bid common.Bid) {
-	cfg := common.GetConfig()
-	logMessage := fmt.Sprintf("ID: %s, Bid: %f, AdID: %s", bid.ID, bid.Price, bid.AdID)
-	_, err := http.Post(cfg.LOGSERVER_URL, "text/plain", strings.NewReader(logMessage))
-	if err != nil {
-		log.Printf("Failed to fire impression pixel: %v", err)
 	}
 }
 

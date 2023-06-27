@@ -47,8 +47,8 @@ func GenerateBid(bidRequest common.BidRequest) common.BidResponse {
 				ImpID: bidRequest.Imp[0].ID,
 				Price: bidAmount,
 				AdID:  fmt.Sprintf("ad%d", j+1),
-				AdM:   fmt.Sprintf("<a href='%s' target='_blank'><img src='%s' /></a>", sampleAdms[j][0], sampleAdms[j][1]),
-				NURL:  cfg.LOGSERVER_URL,
+				AdM:   fmt.Sprintf("<a href='%s' target='_blank'><img src='%s' /><img src='%s' style='height:1px; width:1px;' /></a>", sampleAdms[j][0], sampleAdms[j][1], fmt.Sprintf("%s?adID=%s", cfg.LOGSERVER_URL, fmt.Sprintf("ad%d", j+1))),
+				NURL:  fmt.Sprintf("%s?adID=%s", cfg.LOGSERVER_URL, fmt.Sprintf("ad%d", j+1)),
 			})
 		}
 

@@ -14,8 +14,8 @@ import (
 )
 
 type LogEntry struct {
-	Time    time.Time `bson:"time"`
-	LogText string    `bson:"logText"`
+	Time time.Time `bson:"time"`
+	AdID string    `bson:"adID"`
 }
 
 var logCollection *mongo.Collection
@@ -28,10 +28,13 @@ func init() {
 	if err != nil {
 		log.Fatalf("Failed to connect to MongoDB: %v", err)
 	}
-	logCollection = client.Database("dockerLogDB").Collection("logs")
+	logCollection = client.Database("logDB").Collection("logs")
 }
 
 func LogHandler(w http.ResponseWriter, r *http.Request) {
+	// Get adID from the URL parameters
+	adID := r.URL.Query().Get("adID")
+
 	// Read the body of the request
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -40,16 +43,16 @@ func LogHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Log the data
-	logToDB(string(body))
+	logToDB(string(body), adID)
 	// Respond with a 200 OK
 	fmt.Fprint(w, "OK")
 }
 
-func logToDB(logText string) {
+func logToDB(logText string, adID string) {
 	// Create a log entry
 	entry := LogEntry{
-		Time:    time.Now(),
-		LogText: logText,
+		Time: time.Now(),
+		AdID: adID,
 	}
 
 	// Insert the log entry into the database
