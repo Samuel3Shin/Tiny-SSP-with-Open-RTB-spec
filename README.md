@@ -1,7 +1,7 @@
 # Tiny-SSP-with-Open-RTB-spec
 
 ## Description
-This project implements a tiny Supply-Side Platform (SSP) conforming to the OpenRTB 2.5 spec. It simulates the process of bidding for ad placements in an automated auction with [react-web-for-tiny-ssp repo](https://github.com/Samuel3Shin/react-web-for-tiny-ssp)
+This project implements a tiny Supply-Side Platform (SSP) conforming to the OpenRTB 2.5 spec. It simulates the process of bidding for ad placements in an automated auction with [react-web-for-tiny-ssp repo](https://github.com/Samuel3Shin/react-web-for-tiny-ssp).
 
 ## System Architecture
 The system comprises an SSP server, two Demand-Side Platform (DSP) servers (dsp1 and dsp2) and Log server to log impression pixel. 
@@ -38,7 +38,7 @@ The servers in this system (SSP, dsp1, dsp2, logserver) are designed to run inde
 
 ## Usage
 To use this project, you can use Docker Compose to build and run the system with the following commands:
-Make sure you installed Docker in your machine.
+Make sure you have installed Docker in your machine.
 
 ```bash
 docker-compose build --no-cache
