@@ -37,7 +37,8 @@ Queries Per Second (QPS) is a key performance metric in digital advertising. In 
 The servers in this system (SSP, dsp1, dsp2, logserver) are designed to run independently (stateless) so they can be scaled horizontally. This architecture supports high availability and fault tolerance. If we assume to use AWS in the future, load balancers will distribute incoming ad requests across multiple SSP server instances, and the SSP server distributes bid requests across multiple DSP servers. This ensures that the system can handle high QPS while maintaining low latency.
 
 ## Usage
-To use this project, you can use Docker Compose to build and run the system with the following commands:
+To use this project, you can use Docker Compose to build and run the system with the following commands from the root directory of this project:
+
 Make sure you have installed Docker in your machine.
 
 ```bash
@@ -46,7 +47,7 @@ docker-compose up
 ```
 
 ## Testing
-Each component (ssp, dsp1, dsp2 and logserver) includes unit test cases to ensure that it functions as expected.
+Each component (ssp, dsp1, dsp2 and logserver) includes unit test cases to ensure that it functions as expected. To test all the components, run the following commands from the root directory of this project.
 ```bash
 go test ./...
 ```
