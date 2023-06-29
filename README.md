@@ -10,12 +10,13 @@ The system comprises an SSP server, two Demand-Side Platform (DSP) servers (dsp1
 The SSP server carries out the following functions:
 
 1. Receive ad call from a web browser
-2. Send bid request to the DSP partners
-3. Receive bid responses from DSP partners
-4. Run an auction to determine the highest bid
-5. Return the winning ad to the browser
-6. Trigger an impression pixel upon ad display
-7. Store the impression data in MongoDB via a log server
+2. If the ad call is in a cache, return the cached response.
+3. If the cache misses, send a bid request to the DSP partners
+4. Receive bid responses from DSP partners
+5. Run an auction to determine the highest bid
+6. Return the winning ad to the browser
+7. Trigger an impression pixel upon ad display
+8. Store the impression data in MongoDB via a log server
 
 ### DSP Servers
 Each DSP server carries out the following functions:
@@ -31,7 +32,7 @@ The Log server carries out the following functions:
 2. Store the impression data(Ad ID, Timestamp) in MongoDB
 
 ## Improving QPS
-Queries Per Second (QPS) is a key performance metric in digital advertising. In this project, I improved QPS by optimizing both the SSP server and the DSP servers for high concurrency and low latency. I used lightweight protocols, async I/O operations, and efficient data structures to ensure that we can process a high number of queries per second. We can also leverage cloud auto-scaling capabilities to handle traffic spikes in the future.
+Queries Per Second (QPS) is a key performance metric in digital advertising. In this project, I used goroutines to handle multiple requests concurrently. I also used cache to reduce latency for the same ad requests from web browsers. We can also leverage cloud auto-scaling capabilities to handle traffic spikes in the future.
 
 ## System Landscape in a Cloud Environment
 The servers in this system (SSP, dsp1, dsp2, logserver) are designed to run independently (stateless) so they can be scaled horizontally. This architecture supports high availability and fault tolerance. If we assume to use AWS in the future, load balancers will distribute incoming ad requests across multiple SSP server instances, and the SSP server distributes bid requests across multiple DSP servers. This ensures that the system can handle high QPS while maintaining low latency.
