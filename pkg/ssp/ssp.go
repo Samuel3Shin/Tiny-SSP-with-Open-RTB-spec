@@ -1,13 +1,17 @@
 package ssp
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"reflect"
+	"time"
 
 	"github.com/Samuel3Shin/Tiny-SSP-with-Open-RTB-spec/pkg/common"
+	"github.com/patrickmn/go-cache"
 	"github.com/rs/cors"
 )
 
@@ -17,13 +21,41 @@ type BidGetter interface {
 
 type SSP struct {
 	BidGetter
+	Cache *cache.Cache
 }
 
 func NewSSP(bg BidGetter) *SSP {
-	return &SSP{BidGetter: bg}
+	return &SSP{
+		BidGetter: bg,
+		Cache:     cache.New(600*time.Second, 10*time.Minute), // items in the cache will expire after 600 seconds
+	}
+}
+
+func getCacheKey(bidRequest common.BidRequest) (string, error) {
+	bidRequestBytes, err := json.Marshal(bidRequest)
+	if err != nil {
+		return "", err
+	}
+
+	hasher := sha1.New()
+	hasher.Write(bidRequestBytes)
+	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
 func (s *SSP) GetBidFromDSPs(bidRequest common.BidRequest) (maxBid common.BidResponse, err error) {
+	// Create a unique key for each bidRequest based on its content
+	key, err := getCacheKey(bidRequest)
+	if err != nil {
+		log.Printf("Failed to generate cache key: %v", err)
+		// continue processing the request without caching
+	} else {
+		// Try to get the response from the cache
+		cachedResponse, found := s.Cache.Get(key)
+		if found {
+			return cachedResponse.(common.BidResponse), nil
+		}
+	}
+
 	cfg := common.GetConfig()
 	bidResponses := make(chan common.BidResponse, 2)
 	errResponses := make(chan error, 2)
@@ -69,6 +101,8 @@ func (s *SSP) GetBidFromDSPs(bidRequest common.BidRequest) (maxBid common.BidRes
 			}
 		}
 	}
+	// Store the response in the cache
+	s.Cache.Set(key, maxResponse, cache.DefaultExpiration)
 
 	return maxResponse, nil
 }

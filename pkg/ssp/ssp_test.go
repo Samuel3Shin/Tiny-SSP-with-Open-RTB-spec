@@ -1,6 +1,7 @@
 package ssp_test
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/Samuel3Shin/Tiny-SSP-with-Open-RTB-spec/pkg/common"
@@ -41,6 +42,7 @@ func TestGetBidFromDSPs(t *testing.T) {
 		},
 	}
 
+	// Test that the result is not in the cache
 	maxBidResponse, err := sspInstance.GetBidFromDSPs(bidRequest)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
@@ -50,5 +52,15 @@ func TestGetBidFromDSPs(t *testing.T) {
 
 	if maxBid.ID != "1234" || maxBid.Price != 50.0 || maxBid.AdID != "ad1" {
 		t.Errorf("Unexpected bid: %v", maxBid)
+	}
+
+	// Test that the result is in the cache
+	maxBidResponseCached, err := sspInstance.GetBidFromDSPs(bidRequest)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	if !reflect.DeepEqual(maxBidResponse, maxBidResponseCached) {
+		t.Errorf("Unexpected difference between initial response and cached response")
 	}
 }
